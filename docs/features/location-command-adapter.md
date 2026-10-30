@@ -8,15 +8,15 @@ Calling the developer tools as separate processes was chosen over a private Mobi
 
 ## Arguments
 
-A Simulator set is `xcrun simctl location <udid> set <lat>,<lon>`. A Simulator clear drops the coordinate. An iPhone set is `xcrun devicectl device simulate location coordinate` with `--device`, `--latitude`, and `--longitude`. An iPhone clear is `devicectl device simulate location clear`.
+A Simulator set is `xcrun simctl location <udid> set <lat>,<lon>`. A Simulator clear is `simctl location <udid> clear`. That command stops the simulation and leaves the last coordinate in apps that are already running, because a Simulator has no live GPS fix to replace it. After a successful clear, the runner restarts the Simulator's location service with `simctl spawn <udid> launchctl kickstart -k system/com.apple.locationd`, which makes those apps drop the fix. An iPhone clear does not do that restart. An iPhone set is `xcrun devicectl device simulate location coordinate` with `--device`, `--latitude=`, and `--longitude=`. The number is attached to the flag because a west or south coordinate starts with `-`, and a separate argument is then read as another flag. That is the missing-longitude failure. An iPhone clear is `devicectl device simulate location clear`.
 
 ```swift
 case .setPhone(let id, let coordinate):
     [
         "xcrun", "devicectl", "device", "simulate", "location", "coordinate",
         "--device", id,
-        "--latitude", coordinate.latitude.commandToken,
-        "--longitude", coordinate.longitude.commandToken
+        "--latitude=\(coordinate.latitude.commandToken)",
+        "--longitude=\(coordinate.longitude.commandToken)"
     ]
 ```
 
@@ -26,8 +26,8 @@ case .setPhone(let id, let coordinate):
 
 `ProcessCommandRunner` is the only type that starts a process. It allows one in-flight command per device. If the previous command for that device finished less than 5 seconds ago, it waits out the gap, which extends the 2 second and 4 second retry backoff. A 30 second timeout terminates the process and counts as a failed attempt. `SystemProcessSpawner` uses `/usr/bin/xcrun`.
 
-Device lists are parsed from saved JSON fixtures. Shut-down Simulators are dropped. A phone whose connection is disconnected is dropped. A Mac listed by the same tool is dropped.
+Device lists are parsed from saved JSON fixtures. Shut-down Simulators are dropped. A phone whose connection is disconnected is dropped. A Mac listed by the same tool is dropped. A booted Simulator is also returned by the phone list, with the same identifier and `reality` of `simulated`. That entry is dropped, so the menu shows the Simulator once and sends Simulator commands to it.
 
 ## Tests
 
-`locationCommandsMatchTheXcodeTools`, `deviceListsKeepBootedSimulatorsAndAvailablePhones`, and `runnerEnforcesTheGapTheTimeoutAndASingleInFlightCommand` cover the argv, the fixtures, the 5 second gap, the timeout, and the overlap refusal.
+`locationCommandsMatchTheXcodeTools`, `simulatorClearRestartsLocationServices`, `deviceListsKeepBootedSimulatorsAndAvailablePhones`, and `runnerEnforcesTheGapTheTimeoutAndASingleInFlightCommand` cover the argv, the location-service restart after a Simulator clear, the fixtures, the 5 second gap, the timeout, and the overlap refusal.

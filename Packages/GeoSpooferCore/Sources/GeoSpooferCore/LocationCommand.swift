@@ -32,8 +32,8 @@ public enum LocationCommand: Equatable, Sendable {
             [
                 "xcrun", "devicectl", "device", "simulate", "location", "coordinate",
                 "--device", id,
-                "--latitude", coordinate.latitude.commandToken,
-                "--longitude", coordinate.longitude.commandToken
+                "--latitude=\(coordinate.latitude.commandToken)",
+                "--longitude=\(coordinate.longitude.commandToken)"
             ]
         case .clearPhone(let id):
             ["xcrun", "devicectl", "device", "simulate", "location", "clear", "--device", id]
@@ -56,6 +56,12 @@ public enum LocationCommand: Equatable, Sendable {
         case .iPhone:
             .clearPhone(id: device.id)
         }
+    }
+
+    /// `simctl location clear` stops the simulation and leaves the last fix in running apps.
+    /// Restarting the Simulator's location service makes those apps drop it.
+    public static func flushSimulatorLocationService(udid: String) -> [String] {
+        ["xcrun", "simctl", "spawn", udid, "launchctl", "kickstart", "-k", "system/com.apple.locationd"]
     }
 }
 

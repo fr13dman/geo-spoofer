@@ -36,6 +36,41 @@ An iPhone needs to be trusted, unlocked, and available to Xcode. A Simulator mus
 7. Press Reset to return that device to its live location, or press Stop to cancel and clear every device the app can reach.
 8. Open Location Log from the menu bar to read what was sent.
 
+## How to test it
+
+Point `xcode-select` at Xcode before either check. A shut-down Simulator does not appear in the device menu. A phone that Xcode cannot see does not appear either, and Apply stays disabled until a device is listed.
+
+### Simulator, in the app
+
+1. Boot an iPhone Simulator from Xcode or the Simulator app.
+2. Open GeoSpoofer and choose that Simulator. It is listed once.
+3. Search for a place or drop a pin, drag the duration dial off zero, and press Apply.
+4. In the Simulator, open Maps or any app that shows the current location. It should sit on the pin.
+5. Press Reset. The Simulator has no live GPS, so GeoSpoofer clears the simulation and restarts the Simulator’s location service. The blue dot should leave the pin.
+6. Open Location Log from the menu bar. You should see the Apply and the Clear.
+
+Closing the GeoSpoofer window leaves the app running so it can clear the override when the duration ends.
+
+There is also an automated round trip. From the repo root:
+
+```bash
+cd Packages/GeoSpooferCore
+RUN_SIMULATOR_TESTS=1 swift test --filter simulatorProbeReadsTheAppliedCoordinate
+```
+
+That test builds a small probe, installs it on an iPhone Simulator, sets `37.7749,-122.4194` (San Francisco), waits until the probe reports that coordinate, and then clears it. Without `RUN_SIMULATOR_TESTS=1`, the same test returns immediately and does not touch a Simulator. `swift test` with no filter runs the rest of the suite on fixtures and does not boot a Simulator or talk to a phone.
+
+### Physical iPhone
+
+1. Connect the phone with a cable, or use one that is already paired with this Mac over the network. Unlock it and tap Trust. Leave Developer Mode on. GeoSpoofer does not turn Developer Mode on, and it does not reboot or erase the phone.
+2. Confirm Xcode can see it in Window > Devices and Simulators, or with `xcrun devicectl list devices`. If it is missing there, GeoSpoofer’s device menu stays empty.
+3. In GeoSpoofer, choose that iPhone, set a pin and a duration, and press Apply. The status line names the phone and the expiration.
+4. On the phone, open Maps or another location app and confirm it shows the pin. Apps can still tell the location is simulated.
+5. Press Reset and confirm the phone shows its real location again.
+6. Check Location Log for the Apply and the Clear.
+
+On iOS 18 and later, unplugging the phone drops the simulation and the phone returns to live GPS. Plug it back in before the deadline and GeoSpoofer applies the same pin again, keeping the original expiration. If the deadline has already passed, it sends Clear instead.
+
 To pack a local disk image:
 
 ```bash

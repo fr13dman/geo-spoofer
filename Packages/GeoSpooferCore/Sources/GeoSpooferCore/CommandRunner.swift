@@ -94,6 +94,9 @@ public actor ProcessCommandRunner: LocationCommanding {
                 let reason = output.stderr.isEmpty ? "Command exited with status \(output.status)." : output.stderr
                 throw RunnerError.failed(reason)
             }
+            if case .clearSimulator(let udid) = command {
+                try await flushSimulatorLocationService(udid: udid)
+            }
             return output
         } catch let error as RunnerError {
             lastFinished[deviceID] = clock.now()
@@ -101,6 +104,24 @@ public actor ProcessCommandRunner: LocationCommanding {
         } catch {
             lastFinished[deviceID] = clock.now()
             throw RunnerError.failed(error.localizedDescription)
+        }
+    }
+
+    private func flushSimulatorLocationService(udid: String) async throws {
+        let output: ProcessOutput
+        do {
+            output = try await spawner.spawn(
+                arguments: LocationCommand.flushSimulatorLocationService(udid: udid),
+                timeout: RetrySchedule.timeout
+            )
+        } catch let error as RunnerError {
+            throw error
+        } catch {
+            throw RunnerError.failed(error.localizedDescription)
+        }
+        if output.status != 0 {
+            let reason = output.stderr.isEmpty ? "Location service restart exited with status \(output.status)." : output.stderr
+            throw RunnerError.failed(reason)
         }
     }
 }

@@ -28,7 +28,7 @@ public enum DeviceListParser {
             if let platform, !platform.localizedCaseInsensitiveContains("ios"), !platform.localizedCaseInsensitiveContains("iphone") {
                 continue
             }
-            guard phoneIsAvailable(entry) else { continue }
+            guard !phoneIsSimulator(entry), phoneIsAvailable(entry) else { continue }
             devices.append(Device(id: id, name: name, kind: .iPhone, connected: true))
         }
         return devices.sorted { $0.name < $1.name }
@@ -81,6 +81,35 @@ public enum DeviceListParser {
             return platform
         }
         return entry["platform"] as? String
+    }
+
+    /// A booted Simulator is also listed by the phone tool, with the same identifier.
+    /// It belongs in the Simulator list, where location commands use the Simulator tool.
+    private static func phoneIsSimulator(_ entry: [String: Any]) -> Bool {
+        let tokens = visibilityTokens(entry).map { $0.lowercased() }
+        if tokens.contains(where: { $0.contains("simulator") }) { return true }
+        if reality(entry)?.localizedCaseInsensitiveContains("simulated") == true { return true }
+        if provider(entry)?.localizedCaseInsensitiveContains("coresimulator") == true { return true }
+        return false
+    }
+
+    private static func reality(_ entry: [String: Any]) -> String? {
+        if let hardware = entry["hardwareProperties"] as? [String: Any], let reality = hardware["reality"] as? String {
+            return reality
+        }
+        if let properties = entry["properties"] as? [String: Any],
+           let hardware = properties["hardware"] as? [String: Any],
+           let reality = hardware["reality"] as? String {
+            return reality
+        }
+        return nil
+    }
+
+    private static func provider(_ entry: [String: Any]) -> String? {
+        if let properties = entry["deviceProperties"] as? [String: Any], let provider = properties["provider"] as? String {
+            return provider
+        }
+        return nil
     }
 
     private static func phoneIsAvailable(_ entry: [String: Any]) -> Bool {

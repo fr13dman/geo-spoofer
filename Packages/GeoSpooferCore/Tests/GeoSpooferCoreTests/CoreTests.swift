@@ -392,7 +392,7 @@ private func temporaryDirectory() -> URL {
     #expect(
         setPhone.arguments == [
             "xcrun", "devicectl", "device", "simulate", "location", "coordinate",
-            "--device", "UDID", "--latitude", "37.7749", "--longitude", "-122.4194"
+            "--device", "UDID", "--latitude=37.7749", "--longitude=-122.4194"
         ]
     )
     #expect(
@@ -411,6 +411,18 @@ private func temporaryDirectory() -> URL {
     let phones = try DeviceListParser.phones(from: Data(phoneFixture.utf8))
     #expect(phones.map(\.name) == ["Pocket"])
     #expect(phones.map(\.kind) == [.iPhone])
+}
+
+@Test func simulatorClearRestartsLocationServices() async throws {
+    let spawner = RecordingSpawner()
+    let runner = ProcessCommandRunner(spawner: spawner, sleeper: ImmediateSleeper(), clock: ManualClock(now))
+    _ = try await runner.run(.clearSimulator(udid: "SIM"))
+    #expect(spawner.invocations == [
+        LocationCommand.clearSimulator(udid: "SIM").arguments,
+        LocationCommand.flushSimulatorLocationService(udid: "SIM")
+    ])
+    _ = try await runner.run(.clearPhone(id: "PHONE"))
+    #expect(spawner.invocations.count == 3)
 }
 
 @Test func runnerEnforcesTheGapTheTimeoutAndASingleInFlightCommand() async throws {
@@ -478,6 +490,13 @@ private let phoneFixture = """
       {
         "identifier": "MAC",
         "deviceProperties": {"name": "Mac", "platform": "macOS"}
+      },
+      {
+        "identifier": "BOOTED",
+        "visibilityClass": "simulators",
+        "deviceProperties": {"name": "iPhone 16", "provider": "com.apple.CoreSimulator.SimulatorCoreDevicePlugin"},
+        "hardwareProperties": {"reality": "simulated", "udid": "BOOTED"},
+        "connectionProperties": {"tunnelState": "connected", "transportType": "sameMachine"}
       }
     ]
   }
@@ -516,6 +535,19 @@ private final class ScriptedCommander: LocationCommanding, @unchecked Sendable {
         case .failure(let reason):
             throw RunnerError.failed(reason)
         }
+    }
+}
+
+private final class RecordingSpawner: ProcessSpawning, @unchecked Sendable {
+    private let state = OSAllocatedUnfairLock(initialState: [[String]]())
+
+    var invocations: [[String]] {
+        state.withLock { $0 }
+    }
+
+    func spawn(arguments: [String], timeout: TimeInterval) async throws -> ProcessOutput {
+        state.withLock { $0.append(arguments) }
+        return ProcessOutput(status: 0, stdout: "", stderr: "")
     }
 }
 
