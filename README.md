@@ -1,10 +1,19 @@
+<p align="center">
+  <img src="docs/images/icon.png" width="128" alt="GeoSpoofer app icon, a blue map pin on an illustrated map">
+</p>
+
 # GeoSpoofer
 
-**Disclaimer.** GeoSpoofer is experimental software provided for software testing and development purposes only. It is furnished “AS IS,” without warranty of any kind, whether express or implied, including any warranty of merchantability, fitness for a particular purpose, or non-infringement.
+> [!IMPORTANT]
+> **Disclaimer.** GeoSpoofer is experimental software provided for software testing and development purposes only. It is furnished “AS IS,” without warranty of any kind, whether express or implied, including any warranty of merchantability, fitness for a particular purpose, or non-infringement.
+>
+> By downloading, building, or using this software, you accept that you do so entirely at your own risk. You are solely responsible for how you use it, for complying with applicable law, and for complying with the terms of any device, platform, or service you test. You accept the risk of effects on your devices, accounts, data, and any third party. The authors and contributors disclaim liability for any claim, damage, or loss arising out of the use of, or inability to use, this software, to the fullest extent permitted by law.
+>
+> This project is not affiliated with, endorsed by, or sponsored by Apple Inc. A location override is a software simulation. Apps and services may detect it. Do not use this software to misrepresent your location in order to commit fraud, break the law, or violate another party’s terms.
 
-By downloading, building, or using this software, you accept that you do so entirely at your own risk. You are solely responsible for how you use it, for complying with applicable law, and for complying with the terms of any device, platform, or service you test. You accept the risk of effects on your devices, accounts, data, and any third party. The authors and contributors disclaim liability for any claim, damage, or loss arising out of the use of, or inability to use, this software, to the fullest extent permitted by law.
-
-This project is not affiliated with, endorsed by, or sponsored by Apple Inc. A location override is a software simulation. Apps and services may detect it. Do not use this software to misrepresent your location in order to commit fraud, break the law, or violate another party’s terms.
+<p align="center">
+  <img src="docs/images/splash.jpg" alt="A blue map pin with a fading motion trail across an illustrated city map">
+</p>
 
 ## Overview
 
